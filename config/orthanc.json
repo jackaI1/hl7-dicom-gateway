@@ -1,0 +1,10 @@
+{
+  "Name": "Synthetic gateway archive",
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "AuthenticationEnabled": false,
+  "RemoteAccessAllowed": true,
+  "DicomAet": "ORTHANC",
+  "DicomAlwaysAllowStore": true,
+  "DicomCheckCalledAet": true
+}
