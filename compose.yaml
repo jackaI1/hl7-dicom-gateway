@@ -1,0 +1,38 @@
+services:
+  orthanc:
+    image: jodogne/orthanc:1.13.0
+    platform: linux/amd64
+    ports:
+      - "127.0.0.1:${ORTHANC_HTTP_PORT:-8042}:8042"
+      - "127.0.0.1:${ORTHANC_DICOM_PORT:-4242}:4242"
+    volumes:
+      - orthanc-data:/var/lib/orthanc/db
+      - ./config/orthanc.json:/etc/orthanc/orthanc.json:ro
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8042"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    mem_limit: 256m
+  gateway:
+    build: .
+    ports:
+      - "127.0.0.1:${MLLP_PORT:-2575}:2575"
+      - "127.0.0.1:${DICOM_PORT:-11112}:11112"
+    volumes:
+      - gateway-state:/state
+    environment:
+      FHIR_URL: ${FHIR_URL:-}
+    depends_on:
+      orthanc:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',2575),2); s.close()"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    stop_grace_period: 40s
+    mem_limit: 256m
+volumes:
+  orthanc-data:
+  gateway-state:
