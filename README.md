@@ -1,8 +1,16 @@
+I merged this into my existing [lab-assay-lims project](https://github.com/jackaI1/lab-assay-lims/tree/main/projects/hl7-dicom-gateway). The current code is in `projects/hl7-dicom-gateway/` there. I kept the code here so older links still work.
+
+The move keeps the original layout, including `tests/test_hl7.py`, `tests/test_mllp.py`, `tests/test_delivery.py`, `tests/test_dicom.py`. I replaced the README with the report below and left out Git history, installed dependencies, caches and generated build output from the hub copy.
+
+The 7 test source files moved with the code. No project-specific GitHub Actions workflow was retained; the report records the omitted checks, and the test sources can be run locally from the linked folder.
+
+Omitted workflows: `hl7-dicom-gateway-ci.yml`: The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
+
+---
+
 # hl7-dicom-gateway
 
-I built a small medical-message gateway because I wanted to test how patient updates, lab results, and scan files move between systems without using anyone's medical records.
-
-I send it invented patient and lab messages, and it turns them into structured records that another system can read. I also send it generated image files. It replaces their identifying metadata before passing them to Orthanc, a local image archive. If a destination is unavailable, the gateway keeps the work, retries it, and lets me inspect and resend failures.
+I built a small medical-message gateway to learn how the underlying idea works. This is a learning project.
 
 ## Try it
 
@@ -21,8 +29,6 @@ I can open [the local image archive](http://localhost:8042) to find one study co
 ```sh
 docker compose exec -T gateway python -c 'from pathlib import Path; print("\n".join(p.read_text() for p in Path("/state/fhir").glob("*.json")))'
 ```
-
-Repeating the demo does not create more queue jobs or images. When finished:
 
 ```sh
 docker compose down
@@ -64,8 +70,6 @@ docker compose exec -T gateway gateway status --state /state --audit
 docker compose exec -T gateway gateway replay JOB_ID --state /state
 ```
 
-The audit trail records acceptance, duplicates, attempts, retries, delivery, rejection, and replay using opaque job IDs and fixed reason codes. It does not include message bodies or destination error bodies. FHIR files and queue payloads still contain synthetic patient details. The state volume is persistent, unencrypted local storage; I keep it out of Git.
-
 ## Run without containers
 
 I use Python 3.11 or newer and [uv](https://docs.astral.sh/uv/). From this folder:
@@ -82,17 +86,12 @@ FHIR files appear in `state/fhir`. Image delivery needs Orthanc on port 4242; I 
 
 The default listener ports are 2575 for messages and 11112 for images. Compose also publishes Orthanc's web interface on 8042 and image receiver on 4242. I can change host ports using `MLLP_PORT`, `DICOM_PORT`, `ORTHANC_HTTP_PORT`, and `ORTHANC_DICOM_PORT`. `gateway serve --help` lists the native listener and destination options.
 
-## Design and checks
+## Tests and limits
 
-The [design notes](docs/design.md) describe supported fields, identity rules, delivery guarantees, and deliberate limits. The [synthetic messages](src/gateway/samples) are editable examples. I do not claim complete HL7 validation or clinical readiness.
+There are 7 test source files in this copy. That source count does not establish an execution result. This is a source snapshot, and running it on a new machine may need environment-specific setup.
 
-```sh
-uv run ruff check src tests
-uv run ruff format --check src tests
-uv run pytest -q
-uv build
-# Live archive check, with Orthanc running:
-ORTHANC_URL=http://localhost:8042 ORTHANC_DICOM_PORT=4242 uv run pytest -q
-```
 
-CI runs lint and unit tests on Python 3.11 and 3.12, a real Orthanc integration test, and the container demo. The tests exercise message mapping, FHIR R4 model validation, fragmented network frames, duplicate and collision handling, retries, process recovery, replay, metadata removal, real C-STORE transfers, and graceful cleanup. The complete local run passed 53 tests with a live Orthanc server. Without Orthanc, 52 pass and the one live-archive test is skipped. The container demo delivered all four items.
+
+The relocated workflow did not complete successfully within the migration batch. Local test sources remain available.
+
+No project-specific GitHub Actions workflow was retained. The local test sources remain in this folder.
